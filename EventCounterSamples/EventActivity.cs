@@ -29,4 +29,6 @@ namespace EventCounterSamples
             _endActivity(_source, arg0, _stopwatch.Elapsed);
         }
     }
+
+    // Ye olde T1,T2; T1,T2,T3; etc.
 }
