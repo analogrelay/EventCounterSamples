@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using System.Linq;
@@ -14,20 +14,20 @@ namespace EventCounterSamples
         protected override void OnEventSourceCreated(EventSource eventSource)
         {
             // This is called during the constructor of SampleEventSource so we can't access anything on it!
-            if (eventSource.Name == EventSource.GetName(typeof(SampleEventSource)))
+            if (eventSource.Name.StartsWith("EventCounterSamples-"))
             {
                 // Everything
-                //EnableEvents(eventSource, EventLevel.LogAlways, EventKeywords.All, new Dictionary<string, string>() {
-                //    { "EventCounterIntervalSec", "1" }
-                //});
+                EnableEvents(eventSource, EventLevel.LogAlways, EventKeywords.All, new Dictionary<string, string>() {
+                    { "EventCounterIntervalSec", "5" }
+                });
 
                 // Counters only
-                //EnableEvents(eventSource, EventLevel.LogAlways, SampleEventSource.Keywords.Counters, new Dictionary<string, string>() {
-                //    { "EventCounterIntervalSec", "1" }
+                //EnableEvents(eventSource, EventLevel.LogAlways, SimpleEventSource.Keywords.Counters, new Dictionary<string, string>() {
+                //    { "EventCounterIntervalSec", "5" }
                 //});
 
                 // Events only
-                EnableEvents(eventSource, EventLevel.LogAlways, SampleEventSource.Keywords.RequestEvents);
+                //EnableEvents(eventSource, EventLevel.LogAlways, SimpleEventSource.Keywords.RequestEvents, new Dictionary<string, string>());
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using System.Text;
@@ -7,27 +7,34 @@ namespace EventCounterSamples
 {
     // REVIEW: Perhaps this type should be public? Obviously not the methods that emit events, but for access to the
     // Name, Keywords, etc.?
-    [EventSource(Name =  "Microsoft-AspNetCore-EventCounterSamples")]
-    internal partial class SampleEventSource : EventSource
+    [EventSource(Name =  "EventCounterSamples-Activity")]
+    internal partial class ActivityEventSource : EventSource
     {
-        public static readonly SampleEventSource Log = new SampleEventSource();
+        public static readonly ActivityEventSource Log = new ActivityEventSource();
         private readonly EventCounter _requestsStartedCounter;
         private readonly EventCounter _requestsCompletedCounter;
         private readonly EventCounter _requestDurationCounter;
 
-        private SampleEventSource()
+        private ActivityEventSource()
         {
             _requestsStartedCounter = new EventCounter("RequestsStarted", this);
             _requestsCompletedCounter = new EventCounter("RequestsCompleted", this);
             _requestDurationCounter = new EventCounter("RequestDuration", this);
         }
 
+        [NonEvent]
+        internal EventActivity<int> Request(string path)
+        {
+            RequestStarted(path);
+            return EventActivity.Create<int>(this, (self, statusCode, ts) => ((ActivityEventSource)self).RequestCompleted(path, statusCode, (float)ts.TotalMilliseconds));
+        }
+
         [Event(eventId: 1, Message = "Request started at path '{0}'", Level = EventLevel.Informational, Keywords = Keywords.RequestEvents)]
-        internal void RequestStarted(string path)
+        private void RequestStarted(string path)
         {
             if (IsEnabled())
             {
-                if(IsEnabled(EventLevel.LogAlways, Keywords.Counters))
+                if (IsEnabled(EventLevel.LogAlways, Keywords.Counters))
                 {
                     _requestsStartedCounter.WriteMetric(1.0f);
                 }
@@ -39,24 +46,23 @@ namespace EventCounterSamples
             }
         }
 
-        [Event(eventId: 2, Message = "Request completed at path '{0}', with status code: {1}", Level = EventLevel.Informational, Keywords = Keywords.RequestEvents)]
-        internal void RequestCompleted(string path, int statusCode)
+        [Event(eventId: 2, Message = "Request completed at path '{0}', with status code: {1} (duration: {2}ms)", Level = EventLevel.Informational, Keywords = Keywords.RequestEvents)]
+        internal void RequestCompleted(string path, int statusCode, float elapsedMilliseconds)
         {
             if (IsEnabled())
             {
-                if(IsEnabled(EventLevel.LogAlways, Keywords.Counters))
+                if (IsEnabled(EventLevel.LogAlways, Keywords.Counters))
                 {
                     _requestsCompletedCounter.WriteMetric(1.0f);
+                    _requestDurationCounter.WriteMetric(elapsedMilliseconds);
                 }
 
                 if (IsEnabled(EventLevel.Informational, Keywords.RequestEvents))
                 {
-                    WriteEvent(2, path, statusCode);
+                    WriteEvent(2, path, statusCode, elapsedMilliseconds);
                 }
             }
         }
-
-        // Or, a using-based model?
 
         public static class Keywords
         {
