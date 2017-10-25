@@ -7,27 +7,38 @@ namespace EventCounterSamples
 {
     internal class SampleEventListener : EventListener
     {
-        public SampleEventListener()
+        private readonly bool _enableCounters;
+        private readonly bool _enableEvents;
+
+        public SampleEventListener(bool enableCounters, bool enableEvents)
         {
+            _enableCounters = enableCounters;
+            _enableEvents = enableEvents;
         }
 
         protected override void OnEventSourceCreated(EventSource eventSource)
         {
             // This is called during the constructor of SampleEventSource so we can't access anything on it!
-            if (eventSource.Name.StartsWith("EventCounterSamples-"))
+            if (eventSource.Name.StartsWith("Sample-"))
             {
-                // Everything
-                EnableEvents(eventSource, EventLevel.LogAlways, EventKeywords.All, new Dictionary<string, string>() {
-                    { "EventCounterIntervalSec", "5" }
-                });
+                if (_enableCounters || _enableEvents)
+                {
+                    var keywords = EventKeywords.None;
+                    var args = new Dictionary<string, string>();
 
-                // Counters only
-                //EnableEvents(eventSource, EventLevel.LogAlways, SimpleEventSource.Keywords.Counters, new Dictionary<string, string>() {
-                //    { "EventCounterIntervalSec", "5" }
-                //});
+                    if (_enableCounters)
+                    {
+                        keywords |= RequestEventSource.Keywords.Counters;
+                        args["EventCounterIntervalSec"] = "5";
+                    }
 
-                // Events only
-                //EnableEvents(eventSource, EventLevel.LogAlways, SimpleEventSource.Keywords.RequestEvents, new Dictionary<string, string>());
+                    if (_enableEvents)
+                    {
+                        keywords |= RequestEventSource.Keywords.RequestEvents;
+                    }
+
+                    EnableEvents(eventSource, EventLevel.Informational, keywords, args);
+                }
             }
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace EventCounterSamples
 {
@@ -9,6 +10,32 @@ namespace EventCounterSamples
     {
         static async Task Main(string[] args)
         {
+            // Arg parsing
+            var enableCounters = false;
+            var enableEvents = false;
+            var enableLogging = false;
+
+            for (var i = 0; i < args.Length; i += 1)
+            {
+                if(args[i] == "-c")
+                {
+                    enableCounters = true;
+                }
+                else if(args[i] == "-e")
+                {
+                    enableEvents = true;
+                }
+                else if(args[i] == "-l")
+                {
+                    enableLogging = true;
+                }
+            }
+
+            Console.WriteLine($"Counters={enableCounters};Events={enableEvents};Logging={enableLogging}");
+
+            // Start the listener
+            new SampleEventListener(enableCounters, enableEvents);
+
             var cts = new CancellationTokenSource();
 
             Console.WriteLine("Press Ctrl-C to stop");
@@ -21,63 +48,11 @@ namespace EventCounterSamples
 
             var cancellationToken = cts.Token;
 
-            //await RunSimpleSample(cancellationToken);
-            //await RunDisposableSample(cancellationToken);
-            await RunActivitySample(cancellationToken);
-        }
+            var loggerFactory = new LoggerFactory();
+            loggerFactory.AddConsole(enableLogging ? LogLevel.Trace : LogLevel.None);
 
-        private static async Task RunActivitySample(CancellationToken cancellationToken)
-        {
-            var listener = new SampleEventListener();
-            var rando = new Random();
-
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var activity = ActivityEventSource.Log.Request("Foo");
-                try
-                {
-                    await Task.Delay(rando.Next(1, 5) * 100);
-                }
-                finally
-                {
-                    activity.End(200);
-                }
-            }
-        }
-
-        private static async Task RunDisposableSample(CancellationToken cancellationToken)
-        {
-            var listener = new SampleEventListener();
-            var rando = new Random();
-
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                using (DisposableEventSource.Log.Request("Foo"))
-                {
-                    await Task.Delay(rando.Next(1, 5) * 100);
-                }
-            }
-        }
-
-        private static async Task RunSimpleSample(CancellationToken cancellationToken)
-        {
-            var listener = new SampleEventListener();
-            var rando = new Random();
-
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                SimpleEventSource.Log.RequestStarted("Foo");
-
-                var stopwatch = Stopwatch.StartNew();
-                try
-                {
-                    await Task.Delay(rando.Next(1, 5) * 100);
-                }
-                finally
-                {
-                    SimpleEventSource.Log.RequestCompleted("Foo", 200, stopwatch.ElapsedMilliseconds);
-                }
-            }
+            var sampleApp = new SampleApp(loggerFactory.CreateLogger<SampleApp>());
+            await sampleApp.RunAsync(cancellationToken);
         }
     }
 }
