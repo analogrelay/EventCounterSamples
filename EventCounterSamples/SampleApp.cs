@@ -26,10 +26,15 @@ namespace EventCounterSamples
                     var requestUrl = $"http://localhost/request/{rando.Next(100)}";
 
                     // Record the start of the request
-                    using (_logger.StartRequest(requestUrl))
+                    var evt = _logger.StartRequest(requestUrl);
+                    try
                     {
                         // Wait for a random interval
                         await Task.Delay(rando.Next(100) * 10, cancellationToken);
+                    }
+                    finally
+                    {
+                        evt.End(200);
                     }
                 }
             }
