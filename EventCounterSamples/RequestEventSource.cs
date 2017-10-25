@@ -34,8 +34,8 @@ namespace EventCounterSamples
             }
         }
 
-        [Event(eventId: 2, Level = EventLevel.Informational, Keywords = Keywords.RequestEvents, Message = "Completed request: {0} in {1}ms")]
-        public void EndRequest(string requestUrl, float durationInMilliseconds)
+        [Event(eventId: 2, Level = EventLevel.Informational, Keywords = Keywords.RequestEvents, Message = "Completed request: {0} in {2}ms with status {1}")]
+        public void EndRequest(string requestUrl, int statusCode, float durationInMilliseconds)
         {
             if (IsEnabled())
             {
@@ -47,7 +47,7 @@ namespace EventCounterSamples
 
                 if (IsEnabled(EventLevel.Informational, Keywords.RequestEvents))
                 {
-                    WriteEvent(2, requestUrl, durationInMilliseconds);
+                    WriteEvent(2, requestUrl, statusCode, durationInMilliseconds);
                 }
             }
         }
